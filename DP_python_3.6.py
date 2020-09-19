@@ -24,7 +24,7 @@ g_number_of_links = 0
 g_number_of_agents = 0
 g_number_of_passengers=0
 g_number_of_vehicles=0
-g_number_of_time_intervals = 35
+g_number_of_time_intervals =50
 internal_node_seq_no=1
 g_passenger_vehicle_visit_flag =[]
 g_passenger_number_of_visits=[0,0]
@@ -58,11 +58,7 @@ class Link:
         self.link_type=0
         self.free_flow_travel_time = 1.0
         self.node_type = 0
-    def CalculateBRPFunction(self):
-        self.link_cap = self.number_of_lanes * self.lane_cap
-        self.travel_time = self.free_flow_travel_time * (
-                    1 + self.BRP_alpha * ((self.flow_volume / max(0.00001, self.link_cap)) ** self.BRP_beta))
-        self.cost = self.travel_time
+
 
 
 class Agent:
@@ -77,8 +73,7 @@ class Agent:
         self.capacity = 0
         self.base_profit = 0.0
         self.passenger_number_of_visits=0
-        self.path_node_seq_no_list = []
-        self.path_link_seq_no_list = []
+
 
 
 def add_new_node_and_link_for_agent(agent_id,from_or_to_node_id,beginning_time,end_time,agent_type,\
@@ -88,15 +83,15 @@ def add_new_node_and_link_for_agent(agent_id,from_or_to_node_id,beginning_time,e
     global internal_node_seq_no
 
     new_node = Node()
-    new_link1 = Link()    #物理点到虚拟点
-    new_link2 = Link()    #虚拟点到物理点
+    new_link1 = Link()
+    new_link2 = Link()
     if agent_type == 0:
         g_internal_node_id_dict[agent_id * 100] = internal_node_seq_no  # internal node seq
         g_external_node_id_dict[internal_node_seq_no] = agent_id * 100
         new_node.node_type = pickup_delivery_flag   #1 for pickup ,2 for delivery
         new_node.g_node_passenger_id = agent_id
 
-        new_link1.link_type = agent_id*(2-pickup_delivery_flag)     #pick up 的link为正，delivery 为负
+        new_link1.link_type = agent_id*(2-pickup_delivery_flag)
         new_link2.link_type = agent_id*(2-pickup_delivery_flag)
         g_number_of_nodes+=1
         new_node.node_id = internal_node_seq_no
@@ -178,7 +173,7 @@ def add_new_node_and_link_for_agent(agent_id,from_or_to_node_id,beginning_time,e
             new_node.g_activity_node_beginning_time = beginning_time
             new_node.g_activity_node_ending_time = end_time
 
-            # 添加正方向的虚拟link
+
             g_number_of_links += 1
             new_link1.link_id = g_number_of_links
             new_link1.from_node_seq_no = from_or_to_node_id
@@ -207,18 +202,18 @@ def g_ReadInputData():
     global internal_node_seq_no
     global g_passenger_vehicle_visit_flag
     # read nodes information
-    with open('input_node.csv', 'r') as fp:
+    with open('node.csv', 'r') as fp:
         lines = fp.readlines()
         for l in lines[1:]:
             l = l.strip().split(',')
             try:
                 node = Node()
-                g_internal_node_id_dict[int(l[0])] = internal_node_seq_no  # internal node seq
-                g_external_node_id_dict[internal_node_seq_no] = int(l[0])  # internal node seq--external_node_seq
+                g_internal_node_id_dict[int(l[1])] = internal_node_seq_no  # internal node seq
+                g_external_node_id_dict[internal_node_seq_no] = int(l[1])  # internal node seq--external_node_seq
                 node.node_id = internal_node_seq_no #node id means internal node seq
                 internal_node_seq_no += 1
-                node.x = float(l[1])
-                node.y = float(l[2])
+                node.x = float(l[5])
+                node.y = float(l[6])
                 g_node_list.append(node)
                 g_number_of_nodes += 1
 
@@ -229,39 +224,35 @@ def g_ReadInputData():
                 print('Bad read. Check file your self')
         print('nodes_number:{}'.format(g_number_of_nodes))
 
-    with open('input_link.csv', 'r') as fl:
+    with open('link.csv', 'r') as fl:
         linel = fl.readlines()
         for l in linel[1:]:
             l = l.strip().split(',')
-            try:
-                link = Link()
-                link.link_id = g_number_of_links
-                link.from_node_seq_no = g_internal_node_id_dict[int(l[0])]
-                link.to_node_seq_no = g_internal_node_id_dict[int(l[1])]
-                link.direction=int(l[2])
-                link.length = float(l[3])
-                link.number_of_lanes = int(l[4])
-                link.speed_limit = float(l[5])
-                link.lane_cap = float(l[6])
-                link.jam_density=float(l[8])
-                link.free_flow_travel_time = link.length / link.speed_limit * 60
 
-                g_node_list[link.from_node_seq_no].outbound_node_list.append(link.to_node_seq_no)
-                g_node_list[link.from_node_seq_no].outbound_node_size=len(g_node_list[link.from_node_seq_no].outbound_node_list)
+            link = Link()
+            link.link_id = g_number_of_links
+            link.from_node_seq_no = g_internal_node_id_dict[int(l[2])]
+            link.to_node_seq_no = g_internal_node_id_dict[int(l[3])]
+            link.direction=1
+            link.length = float(l[5])
+            link.number_of_lanes = int(l[6])
+            link.speed_limit = float(l[7])
 
+            link.free_flow_travel_time = link.length / link.speed_limit * 60
+
+            g_node_list[link.from_node_seq_no].outbound_node_list.append(link.to_node_seq_no)
+            g_node_list[link.from_node_seq_no].outbound_node_size=len(g_node_list[link.from_node_seq_no].outbound_node_list)
 
 
+            g_link_list.append(link)
+            g_number_of_links += 1
 
-                g_link_list.append(link)
-                g_number_of_links += 1
-                # 添加点的outbound_link 信息
-                g_node_list[link.from_node_seq_no].outbound_link_list.append(link)
+            g_node_list[link.from_node_seq_no].outbound_link_list.append(link)
 
-                if g_number_of_links % 8000 == 0:
-                    print('reading {} links..' \
-                          .format(g_number_of_links))
-            except:
-                print('Bad read. Check file your self')
+            if g_number_of_links % 8000 == 0:
+                print('reading {} links..' \
+                      .format(g_number_of_links))
+
         print('links_number:{}'.format(g_number_of_links))
 
 
@@ -289,10 +280,10 @@ def g_ReadInputData():
                     g_external_vehicle_id_dict[vehicle_no] = agent.agent_id
                     agent.capacity = int(l[8])
 
-                    add_new_node_and_link_for_agent(agent.agent_id, agent.from_node_id,          #添加车辆起点的虚拟link和node
+                    add_new_node_and_link_for_agent(agent.agent_id, agent.from_node_id,
                                                     agent.departure_time_beginning,agent.departure_time_ending,
                                                     agent.agent_type,1,1)
-                    add_new_node_and_link_for_agent(agent.agent_id, agent.to_node_id,          #添加车辆终点的虚拟link和node
+                    add_new_node_and_link_for_agent(agent.agent_id, agent.to_node_id,
                                                     agent.arrival_time_beginning,agent.arrival_time_ending,
                                                     agent.agent_type,2,2)
                     g_vehicle_list.append(agent)
@@ -304,10 +295,10 @@ def g_ReadInputData():
                     g_external_passenger_id_dict[pax_no] = agent.agent_id
                     agent.base_profit = float(l[9])
 
-                    add_new_node_and_link_for_agent(agent.agent_id, agent.from_node_id,           #添加乘客起点的虚拟link和node
+                    add_new_node_and_link_for_agent(agent.agent_id, agent.from_node_id,
                                                     agent.departure_time_beginning,agent.departure_time_ending,
                                                     agent.agent_type,1,1)
-                    add_new_node_and_link_for_agent(agent.agent_id, agent.to_node_id,          #添加乘客终点的虚拟link和node
+                    add_new_node_and_link_for_agent(agent.agent_id, agent.to_node_id,
                                                     agent.arrival_time_beginning,agent.arrival_time_ending,
                                                     agent.agent_type,2,2)
                     g_passenger_list.append(agent)
@@ -326,6 +317,7 @@ class CVSState:
         self.passenger_service_begin_time={}
         self.passenger_carrying_state={}
         self.m_visit_sequence=[]
+        self.m_link_sequence =[]
         self.m_visit_time_sequence=[]
         self.m_vehicle_capacity = 0
         self.LabelCost = 9999     #with LR price
@@ -349,6 +341,8 @@ class CVSState:
         self.passenger_carrying_state = copy.copy(pElement.passenger_carrying_state)
         self.m_visit_sequence = []
         self.m_visit_sequence = copy.copy(pElement.m_visit_sequence)
+        self.m_link_sequence=[]
+        self.m_link_sequence= copy.copy(pElement.m_link_sequence)
         self.m_visit_time_sequence = []
         self.m_visit_time_sequence = copy.copy(pElement.m_visit_time_sequence)
         self.LabelCost = copy.copy(pElement.LabelCost)
@@ -385,9 +379,7 @@ class CVSState:
         for i in range(g_number_of_passengers):
             if  self.passenger_service_state[i]==2:
                 self.LabelCost  = self.LabelCost - g_passenger_list[i].base_profit
-                #waiting time for passenger 先不加
-                #self.LabelCost += 0.3 * max(0, (passenger_service_begin_time[passenger_id] - g_passenger_order_time[passenger_id]))
-                #self.PrimalLabelCost += 0.3 * max(0, (passenger_service_begin_time[passenger_id] - g_passenger_order_time[passenger_id]))
+
 
         self.LabelCost = self.LabelCost + self.m_visit_time_sequence[-1] - g_vehicle_list[vehicle_id].departure_time_beginning
         self.PrimalLabelCost = self.PrimalLabelCost + self.m_visit_time_sequence[-1] - g_vehicle_list[vehicle_id].departure_time_beginning
@@ -420,32 +412,32 @@ class CVSState:
 class C_time_indexed_state_vector:
     def __init__(self):
         self.current_time=0
-        self.m_VSStateVector=[]        # 所有状态的列表
-        self.m_state_map={}             # string_key 对应一个 state_index
-    def Reset(self):                     #初始化
+        self.m_VSStateVector=[]
+        self.m_state_map={}
+    def Reset(self):
         self.current_time = 0
         self.m_VSStateVector=[]
         self.m_state_map={}
-    def m_find_state_index(self,string_key):  # 找 string_key 对应的  state_index
+    def m_find_state_index(self,string_key):
         if string_key in self.m_state_map.values():
             return list(self.m_state_map.keys())[list(self.m_state_map.values()).index(string_key)]
 
-              #返回'string_key'对应的
+
         else:
             return -1
 
-    def update_state(self,new_element):           #更新状态
+    def update_state(self,new_element):
 
         string_key = new_element.generate_string_key()
-        state_index = self.m_find_state_index(string_key)    #读取这个string_key对应的state_index
+        state_index = self.m_find_state_index(string_key)
 
-        if state_index == -1:                          #没有这个状态,那就加
+        if state_index == -1:
             state_index = len(self.m_VSStateVector)
             self.m_VSStateVector.append(new_element)
             self.m_state_map[state_index] = string_key
         else:
 
-            if new_element.LabelCost < self.m_VSStateVector[state_index].LabelCost:    #如果有就比较
+            if new_element.LabelCost < self.m_VSStateVector[state_index].LabelCost:
                 self.m_VSStateVector[state_index]=new_element
 
 
@@ -488,7 +480,7 @@ def g_optimal_time_dependenet_dynamic_programming(
         vehicle_capacity,
         BestKSize,
         DualCostFlag):
-    element= CVSState()
+
     global g_passenger_vehicle_visit_flag
     global g_time_dependent_state_vector
     global g_vehicle_passenger_visit_flag
@@ -530,7 +522,7 @@ def g_optimal_time_dependenet_dynamic_programming(
         g_time_dependent_state_vector[vehicle_id][t].Sort()
         #2 scan the best k elements
         for w_index in range(min(BestKSize,len(g_time_dependent_state_vector[vehicle_id][t].m_VSStateVector))):
-            pElement=g_time_dependent_state_vector[vehicle_id][t].m_VSStateVector[w_index]      #pElement 是一个CVSState的实例
+            pElement=g_time_dependent_state_vector[vehicle_id][t].m_VSStateVector[w_index]
             from_node_id=pElement.current_node_id
             # step 2.1 link from_node to to_node
             from_node=g_node_list[from_node_id]
@@ -571,10 +563,12 @@ def g_optimal_time_dependenet_dynamic_programming(
                                     #for arriving at activity node and begin wait
                                     new_element.m_visit_time_sequence.append(next_time)
                                     new_element.m_visit_sequence.append(to_node_id)
+
                                     #for wait until activity node's depature time
                                     new_element.m_visit_time_sequence.append(to_node.g_activity_node_beginning_time)
                                     new_element.m_visit_sequence.append(to_node_id)
                                     new_element.CalculateLabelCost(vehicle_id)
+
                                     g_time_dependent_state_vector[vehicle_id][to_node.g_activity_node_beginning_time].update_state(new_element)
                                     continue
                             # delivery process
@@ -588,10 +582,12 @@ def g_optimal_time_dependenet_dynamic_programming(
                                     #for arriving at activity node and begin wait
                                     new_element.m_visit_time_sequence.append(next_time)
                                     new_element.m_visit_sequence.append(to_node_id)
+
                                     #for wait until activity node's depature time
                                     new_element.m_visit_time_sequence.append(to_node.g_activity_node_beginning_time)
                                     new_element.m_visit_sequence.append(to_node_id)
                                     new_element.CalculateLabelCost(vehicle_id)
+
                                     g_time_dependent_state_vector[vehicle_id][to_node.g_activity_node_beginning_time].update_state(new_element)
                                     continue
                             # donot need waiting
@@ -601,20 +597,23 @@ def g_optimal_time_dependenet_dynamic_programming(
                             new_element.passenger_service_state[to_node_passenger_id-1] = to_node_type
                             new_element.m_visit_time_sequence.append(next_time)
                             new_element.m_visit_sequence.append(to_node_id)
+                            new_element.m_link_sequence.append(link_no.link_id)
                             new_element.CalculateLabelCost(vehicle_id)
+
                             g_time_dependent_state_vector[vehicle_id][next_time].update_state(new_element)
                             continue
-                    # 下一个点是普通 node
+
                     elif to_node_passenger_id < 1 and to_node_type == 0:
                         new_element = CVSState()
                         new_element.mycopy(pElement)
                         new_element.current_node_id = to_node_id
                         new_element.m_visit_time_sequence.append(next_time)
                         new_element.m_visit_sequence.append(to_node_id)
+                        new_element.m_link_sequence.append(link_no.link_id)
                         new_element.CalculateLabelCost(vehicle_id)
                         g_time_dependent_state_vector[vehicle_id][next_time].update_state(new_element)
                         continue
-                    # 下一个点是 终点
+
                     elif to_node_id == destination_node:
                         new_element = CVSState()
                         new_element.mycopy(pElement)
@@ -622,15 +621,18 @@ def g_optimal_time_dependenet_dynamic_programming(
                         if next_time < arrival_time_beginning:
                             new_element.m_visit_time_sequence.append(next_time)
                             new_element.m_visit_sequence.append(to_node_id)
+
                             #g_time_dependent_state_vector[vehicle_id][next_time].update_state(new_element)
                             new_element.m_visit_time_sequence.append(arrival_time_beginning)
                             new_element.m_visit_sequence.append(to_node_id)
+                            new_element.m_link_sequence.append(link_no.link_id)
                             #g_time_dependent_state_vector[vehicle_id][next_time].update_state(new_element)
                             new_element.CalculateLabelCost(vehicle_id)
 
                         else:
                             new_element.m_visit_time_sequence.append(next_time)
                             new_element.m_visit_sequence.append(to_node_id)
+                            new_element.m_link_sequence.append(link_no.link_id)
                             new_element.CalculateLabelCost(vehicle_id)
                             #g_time_dependent_state_vector[vehicle_id][next_time].update_state(new_element)
 
@@ -638,11 +640,13 @@ def g_optimal_time_dependenet_dynamic_programming(
                         new_element.CalculateLabelCost(vehicle_id)
                         #print g_ending_state_vector[vehicle_id]
                         continue
-    print("ok")
+
     g_ending_state_vector[vehicle_id].Sort()
     print(g_ending_state_vector[vehicle_id].m_VSStateVector[0].m_visit_sequence)
     print(g_ending_state_vector[vehicle_id].m_VSStateVector[0].m_visit_time_sequence)
-    return g_ending_state_vector[vehicle_id].GetBestValue(DualCostFlag, vehicle_id)
+    print(g_ending_state_vector[vehicle_id].m_VSStateVector[0].m_link_sequence)
+    return g_ending_state_vector[vehicle_id].m_VSStateVector[0].m_visit_sequence,g_ending_state_vector[vehicle_id].m_VSStateVector[0].m_visit_time_sequence,\
+            g_ending_state_vector[vehicle_id].m_VSStateVector[0].m_link_sequence
 
 
 
@@ -651,16 +655,57 @@ def g_optimal_time_dependenet_dynamic_programming(
 if __name__=='__main__':
     print('Reading data......')
     g_ReadInputData()
-    # output_node.csv  with virtual node
-    f = open("output_node.csv", "w")
-    f.write("node_id,node_type\n")
-    for i in range(1,len(g_node_list)):
-        f.write(str(g_node_list[i].node_id) +","+str(g_node_list[i].node_type) +"\n")
-    f.close()
-    # output_link.csv  with virtual node
-    f = open("output_link.csv", "w")
-    f.write("frome_node,to_node,link_type\n")
-    for i in g_link_list:
-        f.write(str(i.from_node_seq_no) +","+str(i.to_node_seq_no)+","+ str(i.link_type)+"\n")
-    f.close()
-    g_optimal_time_dependenet_dynamic_programming(0,11,1,3,12,14,30,3,100,1)
+
+    node_seq,time_seq,link_seq = g_optimal_time_dependenet_dynamic_programming(0, 11, 1, 3, 12, 14, 30, 3, 100, 1)
+    for i in range(len(node_seq)):
+        node_id = node_seq[i]
+        if g_node_list[node_id].node_type == 1: #pickup
+            passenger_id =  g_node_list[node_id].g_node_passenger_id
+            g_passenger_list[passenger_id-1].start_index = i
+        if g_node_list[node_id].node_type == 2: #dropoff
+            passenger_id =  g_node_list[node_id].g_node_passenger_id
+            g_passenger_list[passenger_id-1].end_index = i+1
+    for p in g_passenger_list:
+        p.node_sequence = node_seq[p.start_index:p.end_index]
+        p.link_sequence = link_seq[(p.start_index+1):(p.end_index+1)]
+        p.time_sequence = time_seq[p.start_index:p.end_index]
+
+    f = open("agent.csv", "w")
+    f.write("agent_id,o_zone_id,d_zone_id,path_id,o_node_id,to_node_id,agent_type,demand_period,\
+    travel_time,distance,node_sequence,link_sequence,time_sequence,\n")
+
+    for p in g_passenger_list:
+        travel_time = p.time_sequence[-1]-p.time_sequence[0]
+        distance = 0
+        for i in p.link_sequence:
+            distance+=g_link_list[i-1].length
+        f.write(str(p.agent_id)+","+str(p.from_node_id)+","+str(p.to_node_id)+",0,"+str(p.from_node_id)+","+str(p.to_node_id)+","\
+                +str(p.agent_type)+",AM,"+str(travel_time)+","+str(distance)+",")
+        str1 = ""
+        str2 = ""
+        str3 = ""
+        for s in range(len(p.time_sequence)):
+            str1 = str1 + str(p.node_sequence[s]) + ";"
+            str2 = str2 + str(p.link_sequence[s]) + ";"
+            str3 = str3 +"07"+  str(p.time_sequence[s]) + ".00"+  ";"
+        f.write((str1) + "," + (str2) + ","+(str3)+"\n")
+
+    # vehicle
+    for v in g_vehicle_list:
+        travel_time = time_seq[-1] - time_seq[0]
+        distance = 0
+        for i in link_seq:
+
+            distance += g_link_list[i-1].length
+        f.write(
+            str(1) + "," + str(v.from_node_id) + "," + str(v.to_node_id) + ",1," + str(v.from_node_id) + "," + str(
+                v.to_node_id) + "," \
+            + str(v.agent_type) + ",-," + str(travel_time) + "," + str(distance) + ",")
+        str1 = ""
+        str2 = ""
+        str3 = ""
+        for s in range(len(time_seq)):
+            str1 = str1 + str(node_seq[s]) + ";"
+            str2 = str2 + str(link_seq[s]) + ";"
+            str3 = str3 + "07"+str(time_seq[s])+ ".00"+ ";"
+        f.write((str1) + "," + (str2) + "," + (str3) + "\n")
