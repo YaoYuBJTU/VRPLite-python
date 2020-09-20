@@ -102,7 +102,7 @@ def add_new_node_and_link_for_agent(agent_id,from_or_to_node_id,beginning_time,e
         g_node_list[from_or_to_node_id].outbound_node_size += 1
         new_node.g_activity_node_beginning_time = beginning_time
         new_node.g_activity_node_ending_time = end_time
-        # 添加正方向的虚拟link
+
         g_number_of_links += 1
         new_link1.link_id = g_number_of_links
         new_link1.from_node_seq_no = from_or_to_node_id
@@ -117,7 +117,7 @@ def add_new_node_and_link_for_agent(agent_id,from_or_to_node_id,beginning_time,e
         g_link_list.append(new_link1)
         g_node_list[from_or_to_node_id].outbound_link_list.append(new_link1)
 
-        # 添加反方向的虚拟link
+
 
         g_number_of_links += 1
 
@@ -457,7 +457,6 @@ class C_time_indexed_state_vector:
             #self.m_state_map = {}
             self.m_VSStateVector=self.m_VSStateVector[0,BestKValue]
 
-    #只选前k个
     def GetBestValue(self,DualPriceFlag,vehicle_id):
         if len(self.m_VSStateVector) >= 1:
             state_str = self.m_VSStateVector[-1].generate_string_key()
