@@ -206,6 +206,8 @@ def g_ReadInputData():
         lines = fp.readlines()
         for l in lines[1:]:
             l = l.strip().split(',')
+            if int(l[3]) ==1:
+                continue
             try:
                 node = Node()
                 g_internal_node_id_dict[int(l[1])] = internal_node_seq_no  # internal node seq
@@ -228,7 +230,8 @@ def g_ReadInputData():
         linel = fl.readlines()
         for l in linel[1:]:
             l = l.strip().split(',')
-
+            if int(l[9]) !=1:
+                continue
             link = Link()
             link.link_id = g_number_of_links
             link.from_node_seq_no = g_internal_node_id_dict[int(l[2])]
@@ -655,6 +658,8 @@ if __name__=='__main__':
     print('Reading data......')
     g_ReadInputData()
 
+
+
     node_seq,time_seq,link_seq = g_optimal_time_dependenet_dynamic_programming(0, 11, 1, 3, 12, 14, 30, 3, 100, 1)
     for i in range(len(node_seq)):
         node_id = node_seq[i]
@@ -686,7 +691,7 @@ if __name__=='__main__':
         for s in range(len(p.time_sequence)):
             str1 = str1 + str(p.node_sequence[s]) + ";"
             str2 = str2 + str(p.link_sequence[s]) + ";"
-            str3 = str3 +"07"+  str(p.time_sequence[s]) + ".00"+  ";"
+            str3 = str3 +"07"+  str(p.time_sequence[s]) + ":00"+  ";"
         f.write((str1) + "," + (str2) + ","+(str3)+"\n")
 
     # vehicle
@@ -697,7 +702,7 @@ if __name__=='__main__':
 
             distance += g_link_list[i-1].length
         f.write(
-            str(1) + "," + str(v.from_node_id) + "," + str(v.to_node_id) + ",1," + str(v.from_node_id) + "," + str(
+            str(3) + "," + str(v.from_node_id) + "," + str(v.to_node_id) + ",1," + str(v.from_node_id) + "," + str(
                 v.to_node_id) + "," \
             + str(v.agent_type) + ",-," + str(travel_time) + "," + str(distance) + ",")
         str1 = ""
@@ -706,5 +711,5 @@ if __name__=='__main__':
         for s in range(len(time_seq)):
             str1 = str1 + str(node_seq[s]) + ";"
             str2 = str2 + str(link_seq[s]) + ";"
-            str3 = str3 + "07"+str(time_seq[s])+ ".00"+ ";"
+            str3 = str3 + "07"+str(time_seq[s])+ ":00"+ ";"
         f.write((str1) + "," + (str2) + "," + (str3) + "\n")
